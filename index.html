@@ -39,6 +39,12 @@
       flex-direction: column;
       height: 100vh;
       overflow-y: auto;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    #chat.fade-in {
+      opacity: 1;
     }
 
     #messages {
@@ -376,7 +382,9 @@
       border-radius: 12px;
       padding: 8px 16px;
       cursor: pointer;
+      opacity: 0;
       transition: opacity 0.15s ease;
+      pointer-events: none;
     }
 
     #settings-btn:hover {
@@ -604,6 +612,77 @@
       opacity: 0.7;
     }
 
+    /* ---- Password gate ---- */
+
+    #password-gate {
+      position: fixed;
+      inset: 0;
+      background-color: #F5F2E9;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease;
+    }
+
+    #password-gate.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #pw-box {
+      text-align: center;
+    }
+
+    #pw-input-wrap {
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0 75%, #E0E848);
+      border-radius: 12px;
+      padding: 10px 16px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+      position: relative;
+      overflow: hidden;
+      width: 320px;
+    }
+
+    #pw-input-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      opacity: 0.4;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      filter: url(#noise);
+      background: transparent;
+    }
+
+    #pw-input {
+      flex: 1;
+      font-family: 'EB Garamond', serif;
+      font-size: 18px;
+      line-height: 1.5;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      outline: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    #pw-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    #pw-error {
+      font-family: 'EB Garamond', serif;
+      font-size: 14px;
+      color: #D06CD0;
+      margin-top: 12px;
+      height: 20px;
+    }
+
   </style>
 </head>
 <body>
@@ -617,6 +696,16 @@
       <feColorMatrix type="saturate" values="0"/>
     </filter>
   </svg>
+
+  <!-- Password gate -->
+  <div id="password-gate">
+    <div id="pw-box">
+      <div id="pw-input-wrap">
+        <input type="password" id="pw-input" placeholder="Password..." autocomplete="off">
+      </div>
+      <div id="pw-error"></div>
+    </div>
+  </div>
 
   <!-- Chat -->
   <div id="chat">
@@ -682,8 +771,48 @@
   </div>
 
   <script>
-    /* ---- Init ---- */
-    document.getElementById('data-input').focus();
+    /* ---- Password gate ---- */
+    (function () {
+      var gate = document.getElementById('password-gate');
+      var pwInput = document.getElementById('pw-input');
+      var pwError = document.getElementById('pw-error');
+      var chat = document.getElementById('chat');
+      var settingsBtn = document.getElementById('settings-btn');
+      var PASSWORD = 'tov';
+
+      function revealApp() {
+        chat.classList.add('fade-in');
+        settingsBtn.style.opacity = '0.7';
+        settingsBtn.style.pointerEvents = '';
+        document.getElementById('data-input').focus();
+      }
+
+      function unlock() {
+        sessionStorage.setItem('tov-auth', '1');
+        gate.classList.add('hidden');
+        setTimeout(function () {
+          gate.style.display = 'none';
+          revealApp();
+        }, 400);
+      }
+
+      if (sessionStorage.getItem('tov-auth') === '1') {
+        gate.style.display = 'none';
+        revealApp();
+      } else {
+        pwInput.focus();
+        pwInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            if (pwInput.value === PASSWORD) {
+              unlock();
+            } else {
+              pwError.textContent = 'Incorrect password';
+              pwInput.value = '';
+            }
+          }
+        });
+      }
+    })();
 
     /* ---- Chat logic ---- */
     (function () {
