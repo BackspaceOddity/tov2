@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'SouvenirGothic';
+      src: url('SouvenirGothic Bold.otf') format('opentype');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background-color: #F5F2E9;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      font-family: 'EB Garamond', serif;
+      color: #1A1A1A;
+    }
+
+    /* ---- Chat ---- */
+
+    #chat {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    #messages {
+      padding: 16px 24px 24px;
+    }
+
+    #messages-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      width: 100%;
+      padding: 16px 60px 16px 20px;
+      border-radius: 12px;
+      color: #FFFFFF;
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0, #E0E848);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Grain overlay via pseudo-element */
+    .message::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      opacity: 0.4;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      filter: url(#noise);
+      background: transparent;
+    }
+
+    .message:last-child {
+      margin-bottom: 8px;
+    }
+
+    .msg-copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 6px;
+      padding: 5px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+    }
+
+    .msg-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .msg-copy-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ---- Control Panel (unified card) ---- */
+
+    #control-panel {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+      padding: 16px 24px 24px;
+      margin-top: auto;
+      transition: margin-top 0.4s ease;
+    }
+
+    #chat.has-response #control-panel {
+      margin-top: 0;
+      padding-top: 32px;
+    }
+
+    #control-card {
+      max-width: 720px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      display: grid;
+      grid-template-columns: 65% 35%;
+      grid-template-rows: 1fr auto;
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0 75%, #E0E848);
+      position: relative;
+    }
+
+    #control-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      opacity: 0.4;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      filter: url(#noise);
+      background: transparent;
+    }
+
+    .cp-label {
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+
+    /* Left: DATA textarea */
+    .card-data {
+      grid-row: 1;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 16px;
+    }
+
+    #data-input {
+      flex: 1;
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      padding: 0;
+      resize: none;
+      outline: none;
+      min-height: 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    #data-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Right: dropdowns */
+    .card-selectors {
+      grid-row: 1;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .card-select-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 16px;
+    }
+
+    .cp-dropdown {
+      position: relative;
+    }
+
+    .card-select-group + .card-select-group {
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Custom dropdown trigger */
+    .cp-dropdown-trigger {
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .cp-dropdown-trigger .dd-chevron {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .cp-dropdown.open .cp-dropdown-trigger .dd-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .cp-dropdown-trigger .dd-text {
+      opacity: 0.7;
+    }
+
+    .cp-dropdown-trigger .dd-text.has-value {
+      opacity: 1;
+    }
+
+    /* Dropdown panel — positioned via JS */
+    .cp-dropdown-panel {
+      display: none;
+      position: fixed;
+      min-width: 200px;
+      z-index: 100;
+      background: linear-gradient(135deg, #D4A0E0, #C8A8D8, #E0E848);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .cp-dropdown.open .cp-dropdown-panel {
+      display: block;
+    }
+
+    .cp-dropdown-option {
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      color: #FFFFFF;
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s ease;
+    }
+
+    .cp-dropdown-option:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .cp-dropdown-option.selected {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .cp-dropdown-option .dd-check {
+      opacity: 0;
+      font-size: 14px;
+    }
+
+    .cp-dropdown-option.selected .dd-check {
+      opacity: 1;
+    }
+
+    /* Bottom: generate button */
+    #generate-btn {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 0;
+      padding: 14px 24px;
+      cursor: pointer;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    #generate-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+
+    /* ---- Thinking dots ---- */
+
+    .thinking-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      height: 27px;
+    }
+
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .thinking-dots span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes dotPulse {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ---- Settings gear button ---- */
+
+    #settings-btn {
+      position: fixed;
+      top: 32px;
+      left: 48px;
+      z-index: 15;
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0, #E0E848);
+      color: #FFFFFF;
+      -webkit-text-fill-color: #FFFFFF;
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    #settings-btn:hover {
+      opacity: 0.85;
+    }
+
+    /* ---- Settings modal ---- */
+
+    #settings-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background-color: #F5F2E9;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+    }
+
+    #settings-modal::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #settings-modal::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #settings-modal::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+    }
+
+    #settings-modal.open {
+      display: block;
+    }
+
+    #settings-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    #settings-close {
+      position: fixed;
+      top: 32px;
+      left: 48px;
+      z-index: 55;
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0, #E0E848);
+      color: #FFFFFF;
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    #settings-close:hover {
+      opacity: 0.85;
+    }
+
+    .settings-tabs {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+      position: relative;
+      z-index: 1;
+    }
+
+    .settings-tab-divider {
+      width: 1px;
+      align-self: stretch;
+      margin: -14px 0;
+      background: rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    .settings-tab {
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.4);
+      transition: color 0.15s ease;
+    }
+
+    .settings-tab:hover {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .settings-tab.active {
+      color: #FFFFFF;
+    }
+
+    .settings-card {
+      background: linear-gradient(135deg, #E8A04C, #D4A0E0 75%, #E0E848);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .settings-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      opacity: 0.4;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      filter: url(#noise);
+      background: transparent;
+    }
+
+    .settings-card-section {
+      padding: 14px 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .settings-card-section + .settings-card-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .settings-card-label {
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+
+    .settings-tbd {
+      padding: 14px 16px;
+      text-align: left;
+      font-family: 'EB Garamond', serif;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      position: relative;
+      z-index: 1;
+    }
+
+    .settings-textarea {
+      width: 100%;
+      min-height: 80px;
+      font-family: 'EB Garamond', serif;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      resize: none;
+      outline: none;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .settings-textarea:focus {
+      outline: none;
+    }
+
+    .settings-textarea::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .settings-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      position: relative;
+      z-index: 1;
+    }
+
+    .settings-btn-save {
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .settings-btn-save:hover {
+      opacity: 0.7;
+    }
+
+    .settings-btn-reset {
+      font-family: 'SouvenirGothic', 'EB Garamond', serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .settings-btn-reset:hover {
+      opacity: 0.7;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Settings gear button -->
+  <button id="settings-btn">PROMPTS</button>
+
+  <!-- SVG noise filter for grain texture -->
+  <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </svg>
+
+  <!-- Chat -->
+  <div id="chat">
+    <!-- Control panel -->
+    <div id="control-panel">
+      <div id="control-card">
+        <div class="card-data">
+          <div class="cp-label">Data</div>
+          <textarea id="data-input" placeholder="Paste structured, high-quality source content here"></textarea>
+        </div>
+        <div class="card-selectors">
+          <div class="card-select-group">
+            <div class="cp-label">Medium</div>
+            <div class="cp-dropdown" id="dd-rewrite">
+              <button type="button" class="cp-dropdown-trigger">
+                <span class="dd-text">Pick medium</span>
+                <svg class="dd-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="cp-dropdown-panel">
+                <div class="cp-dropdown-option" data-value="landing_page">Landing page<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="social_post">Social post<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="blog_post">Blog post<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="presentation_slides">Presentation slides<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="email_campaign">Email campaign<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="job_posting">Job posting<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="press_release">Press release<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="ad_copy">Ad copy<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="video_script">Video script<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="changelog">Changelog<span class="dd-check">&#10003;</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-select-group">
+            <div class="cp-label">Output</div>
+            <div class="cp-dropdown" id="dd-output">
+              <button type="button" class="cp-dropdown-trigger">
+                <span class="dd-text">Set output</span>
+                <svg class="dd-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="cp-dropdown-panel">
+                <div class="cp-dropdown-option" data-value="plain_text">Plain text<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="claude_code_prompt">Claude Code prompt<span class="dd-check">&#10003;</span></div>
+                <div class="cp-dropdown-option" data-value="markdown">Markdown<span class="dd-check">&#10003;</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button id="generate-btn">Generate</button>
+      </div>
+    </div>
+    <!-- Messages (results area) -->
+    <div id="messages" style="display:none;">
+      <div id="messages-inner"></div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal">
+    <div id="settings-inner">
+      <button id="settings-close">CHAT</button>
+      <div id="settings-body"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ---- Init ---- */
+    document.getElementById('data-input').focus();
+
+    /* ---- Chat logic ---- */
+    (function () {
+      var messagesInner = document.getElementById('messages-inner');
+      var messagesArea = document.getElementById('messages');
+      var generateBtn = document.getElementById('generate-btn');
+      var dataInput = document.getElementById('data-input');
+      var chatEl = document.getElementById('chat');
+
+      // Custom dropdown state
+      var ddState = { rewrite: '', output: '' };
+      var ddDefaults = { rewrite: 'Pick medium', output: 'Set output' };
+
+      document.querySelectorAll('.cp-dropdown').forEach(function (dd) {
+        var id = dd.id.replace('dd-', '');
+        var trigger = dd.querySelector('.cp-dropdown-trigger');
+        var panel = dd.querySelector('.cp-dropdown-panel');
+        var textEl = trigger.querySelector('.dd-text');
+        trigger.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var wasOpen = dd.classList.contains('open');
+          document.querySelectorAll('.cp-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+          if (!wasOpen) {
+            dd.classList.add('open');
+            var cardRect = document.getElementById('control-card').getBoundingClientRect();
+            var triggerRect = trigger.getBoundingClientRect();
+            var vh = window.innerHeight;
+            var panelLeft = cardRect.right + 6;
+            // If panel would overflow right edge, position to the left of the card
+            if (panelLeft + 220 > window.innerWidth) {
+              panelLeft = cardRect.left - 220 - 6;
+              if (panelLeft < 0) panelLeft = 8;
+            }
+            panel.style.left = panelLeft + 'px';
+            // Viewport-aware: more space below → open downward, more space above → open upward
+            var spaceBelow = vh - triggerRect.top;
+            var spaceAbove = triggerRect.bottom;
+            if (spaceBelow >= spaceAbove) {
+              // Open downward: top-align with trigger
+              panel.style.top = triggerRect.top + 'px';
+              panel.style.bottom = 'auto';
+            } else {
+              // Open upward: bottom-align with trigger bottom
+              panel.style.bottom = (vh - triggerRect.bottom) + 'px';
+              panel.style.top = 'auto';
+            }
+          }
+        });
+
+        dd.querySelectorAll('.cp-dropdown-option').forEach(function (opt) {
+          opt.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var val = opt.getAttribute('data-value');
+            dd.querySelectorAll('.cp-dropdown-option').forEach(function (o) { o.classList.remove('selected'); });
+            opt.classList.add('selected');
+            ddState[id] = val;
+            textEl.textContent = opt.textContent.replace('✓', '').trim();
+            textEl.classList.add('has-value');
+            dd.classList.remove('open');
+          });
+        });
+      });
+
+      // Close dropdowns on outside click
+      document.addEventListener('click', function () {
+        document.querySelectorAll('.cp-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+      });
+
+      var messageCount = 0;
+      function addMessage(text, role) {
+        var div = document.createElement('div');
+        div.className = 'message message-' + role;
+        div.textContent = text;
+
+        var posX = (messageCount * 27 + (role === 'user' ? 15 : 65)) % 100;
+        var posY = (messageCount * 41 + (role === 'user' ? 25 : 70)) % 100;
+        div.style.backgroundPosition = posX + '% ' + posY + '%';
+        messageCount++;
+
+        messagesInner.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        return div;
+      }
+
+      function addThinking() {
+        var div = document.createElement('div');
+        div.className = 'message message-ai';
+
+        var posX = (messageCount * 27 + 65) % 100;
+        var posY = (messageCount * 41 + 70) % 100;
+        div.style.backgroundPosition = posX + '% ' + posY + '%';
+
+        var clipboardSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        var checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'msg-copy-btn';
+        copyBtn.innerHTML = clipboardSvg;
+        copyBtn.style.display = 'none';
+        copyBtn.addEventListener('click', function () {
+          var text = div.querySelector('.msg-text');
+          navigator.clipboard.writeText(text ? text.textContent : div.textContent).then(function () {
+            copyBtn.innerHTML = checkSvg;
+            setTimeout(function () { copyBtn.innerHTML = clipboardSvg; }, 1500);
+          });
+        });
+        div.appendChild(copyBtn);
+
+        var dots = document.createElement('div');
+        dots.className = 'thinking-dots';
+        dots.innerHTML = '<span></span><span></span><span></span>';
+        div.appendChild(dots);
+
+        messagesInner.appendChild(div);
+        return div;
+      }
+
+      function extractReply(parsed) {
+        // Edge Function wraps in {reply: "..."}
+        if (parsed.reply) return parsed.reply;
+        // Raw Anthropic response: {content: [{type:"text", text:"..."}]}
+        if (parsed.content && Array.isArray(parsed.content) && parsed.content.length > 0) {
+          var textBlock = parsed.content.find(function (b) { return b.type === 'text'; });
+          if (textBlock && textBlock.text) return textBlock.text;
+          if (parsed.content[0] && parsed.content[0].text) return parsed.content[0].text;
+        }
+        // Error from server
+        if (parsed.error) return 'Error: ' + (typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error));
+        // Unknown shape
+        return 'Unexpected response. Keys: ' + Object.keys(parsed).join(', ');
+      }
+
+      function showReply(bubble, text) {
+        var dots = bubble.querySelector('.thinking-dots');
+        if (dots) dots.remove();
+        var span = document.createElement('span');
+        span.className = 'msg-text';
+        span.textContent = text;
+        bubble.appendChild(span);
+        var copyBtn = bubble.querySelector('.msg-copy-btn');
+        if (copyBtn) copyBtn.style.display = '';
+        messageCount++;
+        bubble.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Instruction lookups — loaded from localStorage or defaults
+      function getRewriteInstructions() {
+        try {
+          var saved = localStorage.getItem('tov-rewrite-instructions');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return null;
+      }
+      function getOutputInstructions() {
+        try {
+          var saved = localStorage.getItem('tov-output-instructions');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return null;
+      }
+
+      function generate() {
+        var data = dataInput.value.trim();
+        if (!data) return;
+        if (!ddState.rewrite) {
+          alert('Please select a Medium format.');
+          return;
+        }
+        if (!ddState.output) {
+          alert('Please select an Output format.');
+          return;
+        }
+
+        generateBtn.disabled = true;
+        messagesArea.style.display = '';
+        messagesInner.innerHTML = '';
+        chatEl.classList.add('has-response');
+
+        var thinkingBubble = addThinking();
+
+        var ri = getRewriteInstructions() || window.DEFAULT_REWRITE;
+        var oi = getOutputInstructions() || window.DEFAULT_OUTPUT;
+        var rewriteText = ri[ddState.rewrite] || ddState.rewrite;
+        var outputText = oi[ddState.output] || ddState.output;
+        var combinedMessage = rewriteText + '\n' + outputText + '\n\nSource content:\n' + data;
+
+        console.log('[TOV] Dropdown state:', JSON.stringify(ddState));
+        console.log('[TOV] Combined message:', combinedMessage);
+        var reqBody = JSON.stringify({ message: combinedMessage });
+        console.log('[TOV] Sending payload:', reqBody);
+
+        fetch('https://ilspxdahkbeayhntskab.supabase.co/functions/v1/bso-tovbot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsc3B4ZGFoa2JlYXlobnRza2FiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDEyOTUsImV4cCI6MjA4NzE3NzI5NX0.UikA9Zuvoc9sv8yBGvGynBGD9g7TqIgzBb1mpIfgYZU',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsc3B4ZGFoa2JlYXlobnRza2FiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDEyOTUsImV4cCI6MjA4NzE3NzI5NX0.UikA9Zuvoc9sv8yBGvGynBGD9g7TqIgzBb1mpIfgYZU'
+          },
+          body: reqBody
+        })
+        .then(function (res) {
+          console.log('[TOV] Response status:', res.status);
+          return res.text();
+        })
+        .then(function (rawText) {
+          console.log('[TOV] Raw response:', rawText);
+          var parsed;
+          try { parsed = JSON.parse(rawText); } catch (e) {
+            console.error('[TOV] JSON parse error:', e);
+            showReply(thinkingBubble, 'Invalid response from server.');
+            generateBtn.disabled = false;
+            return;
+          }
+          console.log('[TOV] Parsed JSON:', JSON.stringify(parsed));
+          showReply(thinkingBubble, extractReply(parsed));
+          generateBtn.disabled = false;
+        })
+        .catch(function (err) {
+          console.error('[TOV] Fetch error:', err);
+          showReply(thinkingBubble, 'Something went wrong. Try again.');
+          generateBtn.disabled = false;
+        });
+      }
+
+      generateBtn.addEventListener('click', generate);
+    })();
+
+    /* ---- Settings ---- */
+    (function () {
+      // Default instruction templates
+      window.DEFAULT_REWRITE = {
+        landing_page: "Rewrite as a landing page: hero headline, subheadline, key benefit sections with CTAs.",
+        social_post: "Rewrite as a social media post: concise, with a hook, max 280 characters for the main text.",
+        blog_post: "Rewrite as a blog post: engaging intro, structured sections, conclusion.",
+        presentation_slides: "Rewrite as presentation slide content: one clear headline per slide, 2-3 supporting bullet points per slide, speaker notes for each slide. Aim for 5-8 slides.",
+        email_campaign: "Rewrite as an email campaign: subject line, preview text, email body with clear CTA. Include 3 variants \u2014 welcome, nurture, and win-back.",
+        job_posting: "Rewrite as a job posting: role title, punchy intro about the role, key responsibilities, requirements, and a compelling closing CTA to apply.",
+        press_release: "Rewrite as a press release: headline, dateline, lead paragraph with who/what/when/where/why, supporting quotes, boilerplate.",
+        ad_copy: "Rewrite as ad copy variants: 3 Google Ads (30-char headlines + 90-char descriptions) and 3 Meta Ads (short primary text + headline + CTA).",
+        video_script: "Rewrite as a video script: hook (first 3 seconds), problem, solution, proof points, CTA. Include visual direction notes. Aim for 60-90 seconds.",
+        changelog: "Rewrite as a changelog/release notes entry: version header, concise bullet points grouped by New/Improved/Fixed, written in a human tone."
+      };
+
+      window.DEFAULT_OUTPUT = {
+        plain_text: "Return as plain text, no markup.",
+        claude_code_prompt: "Return as a detailed prompt for Claude Code that will implement this content \u2014 include file structure, copy, and styling notes.",
+        markdown: "Return as clean Markdown with proper heading hierarchy, lists, and formatting."
+      };
+
+      var rewriteLabels = {
+        landing_page: 'Landing page',
+        social_post: 'Social post',
+        blog_post: 'Blog post',
+        presentation_slides: 'Presentation slides',
+        email_campaign: 'Email campaign',
+        job_posting: 'Job posting',
+        press_release: 'Press release',
+        ad_copy: 'Ad copy',
+        video_script: 'Video script',
+        changelog: 'Changelog'
+      };
+
+      var outputLabels = {
+        plain_text: 'Plain text',
+        claude_code_prompt: 'Claude Code prompt',
+        markdown: 'Markdown'
+      };
+
+      var modal = document.getElementById('settings-modal');
+      var body = document.getElementById('settings-body');
+      var settingsBtn = document.getElementById('settings-btn');
+      var closeBtn = document.getElementById('settings-close');
+      var saveBtn, resetBtn;
+
+      var rewriteOrder = ['landing_page','social_post','blog_post','presentation_slides','email_campaign','job_posting','press_release','ad_copy','video_script','changelog'];
+      var outputOrder = ['plain_text','claude_code_prompt','markdown'];
+
+      function autoResizeTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+      }
+
+      function initTextareaAutoResize() {
+        body.querySelectorAll('.settings-textarea').forEach(function (ta) {
+          autoResizeTextarea(ta);
+          ta.addEventListener('input', function () { autoResizeTextarea(ta); });
+        });
+      }
+
+      function loadCurrent() {
+        var ri, oi;
+        try { ri = JSON.parse(localStorage.getItem('tov-rewrite-instructions')); } catch(e) {}
+        try { oi = JSON.parse(localStorage.getItem('tov-output-instructions')); } catch(e) {}
+        return {
+          rewrite: ri || JSON.parse(JSON.stringify(window.DEFAULT_REWRITE)),
+          output: oi || JSON.parse(JSON.stringify(window.DEFAULT_OUTPUT))
+        };
+      }
+
+      var activeTab = 'medium';
+
+      function buildForm() {
+        var current = loadCurrent();
+        var html = '<div class="settings-card">';
+        // Tabs row inside the card
+        html += '<div class="settings-tabs">' +
+          '<button type="button" class="settings-tab' + (activeTab === 'medium' ? ' active' : '') + '" data-tab="medium">Medium</button>' +
+          '<span class="settings-tab-divider"></span>' +
+          '<button type="button" class="settings-tab' + (activeTab === 'output' ? ' active' : '') + '" data-tab="output">Output</button>' +
+          '<span class="settings-tab-divider"></span>' +
+          '<button type="button" class="settings-tab' + (activeTab === 'tone' ? ' active' : '') + '" data-tab="tone">Tone</button>' +
+          '</div>';
+        // Medium panel
+        html += '<div class="settings-tab-panel" data-tab="medium"' + (activeTab !== 'medium' ? ' style="display:none"' : '') + '>';
+        rewriteOrder.forEach(function (key) {
+          html += '<div class="settings-card-section">' +
+            '<div class="settings-card-label">' + rewriteLabels[key] + '</div>' +
+            '<textarea class="settings-textarea" data-group="rewrite" data-key="' + key + '">' +
+            escapeHtml(current.rewrite[key] || '') +
+            '</textarea></div>';
+        });
+        html += '</div>';
+        // Output panel
+        html += '<div class="settings-tab-panel" data-tab="output"' + (activeTab !== 'output' ? ' style="display:none"' : '') + '>';
+        outputOrder.forEach(function (key) {
+          html += '<div class="settings-card-section">' +
+            '<div class="settings-card-label">' + outputLabels[key] + '</div>' +
+            '<textarea class="settings-textarea" data-group="output" data-key="' + key + '">' +
+            escapeHtml(current.output[key] || '') +
+            '</textarea></div>';
+        });
+        html += '</div>';
+        // Tone panel
+        html += '<div class="settings-tab-panel" data-tab="tone"' + (activeTab !== 'tone' ? ' style="display:none"' : '') + '>';
+        html += '<div class="settings-tbd">Currently defined in the system prompt.</div>';
+        html += '</div>';
+        // Actions row inside the card
+        html += '<div class="settings-actions" id="settings-actions"' + (activeTab === 'tone' ? ' style="display:none"' : '') + '>' +
+          '<button type="button" class="settings-btn-save" id="settings-save">Save</button>' +
+          '<button type="button" class="settings-btn-reset" id="settings-reset">Reset to defaults</button>' +
+          '</div>';
+        html += '</div>'; // close settings-card
+        body.innerHTML = html;
+        // Re-query action elements
+        saveBtn = document.getElementById('settings-save');
+        resetBtn = document.getElementById('settings-reset');
+        saveBtn.addEventListener('click', saveSettings);
+        resetBtn.addEventListener('click', resetDefaults);
+        // Tab switching
+        body.querySelectorAll('.settings-tab').forEach(function (tab) {
+          tab.addEventListener('click', function () {
+            switchTab(tab.getAttribute('data-tab'));
+          });
+        });
+      }
+
+      function switchTab(tabName) {
+        activeTab = tabName;
+        body.querySelectorAll('.settings-tab').forEach(function (t) {
+          t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+        });
+        body.querySelectorAll('.settings-tab-panel').forEach(function (p) {
+          p.style.display = p.getAttribute('data-tab') === tabName ? '' : 'none';
+        });
+        // Show/hide actions row (hidden on tone tab)
+        var actions = document.getElementById('settings-actions');
+        if (actions) actions.style.display = tabName === 'tone' ? 'none' : '';
+        // Re-measure textareas in newly visible panel
+        var panel = body.querySelector('.settings-tab-panel[data-tab="' + tabName + '"]');
+        if (panel) {
+          panel.querySelectorAll('.settings-textarea').forEach(function (ta) {
+            autoResizeTextarea(ta);
+          });
+        }
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function openSettings() {
+        buildForm();
+        modal.classList.add('open');
+        requestAnimationFrame(function () {
+          initTextareaAutoResize();
+        });
+      }
+
+      function closeSettings() {
+        modal.classList.remove('open');
+      }
+
+      function saveSettings() {
+        var rewrite = {};
+        var output = {};
+        body.querySelectorAll('.settings-textarea').forEach(function (ta) {
+          var group = ta.getAttribute('data-group');
+          var key = ta.getAttribute('data-key');
+          if (group === 'rewrite') rewrite[key] = ta.value;
+          else if (group === 'output') output[key] = ta.value;
+        });
+        localStorage.setItem('tov-rewrite-instructions', JSON.stringify(rewrite));
+        localStorage.setItem('tov-output-instructions', JSON.stringify(output));
+        saveBtn.textContent = 'Saved';
+        setTimeout(function () { saveBtn.textContent = 'Save'; }, 2000);
+      }
+
+      function resetDefaults() {
+        localStorage.removeItem('tov-rewrite-instructions');
+        localStorage.removeItem('tov-output-instructions');
+        buildForm();
+        requestAnimationFrame(function () { initTextareaAutoResize(); });
+        resetBtn.textContent = 'Reset done';
+        setTimeout(function () { resetBtn.textContent = 'Reset to defaults'; }, 2000);
+      }
+
+      settingsBtn.addEventListener('click', openSettings);
+      closeBtn.addEventListener('click', closeSettings);
+
+      // Close on Escape
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeSettings();
+      });
+    })();
+  </script>
+</body>
+</html>
